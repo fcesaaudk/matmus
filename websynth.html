@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>WebSynth - Function-Based Sound</title>
+  <style>
+    body { font-family: sans-serif; padding: 20px; max-width: 600px; margin: auto; }
+    input, button { font-size: 1em; margin: 10px 0; width: 100%; }
+    label { font-weight: bold; }
+  </style>
+</head>
+<body>
+  <h1>🎶 WebSynth: Sound from Math Functions</h1>
+  <label for="funcInput">Enter a function of time <code>t</code>:</label>
+  <input type="text" id="funcInput" placeholder="e.g. Math.sin(t) + Math.cos(2*t)" />
+  <button onclick="playSound()">Play Sound</button>
+<div style="background:#f0f0f0; padding:10px; border-radius:5px; margin-top:10px;">
+  <h3>🧮 Function Help</h3>
+  <p>Enter a JavaScript-style function of time <code>t</code>. You can combine functions using <code>+</code>, <code>-</code>, <code>*</code>, and <code>/</code>.</p>
+  <p><strong>Available functions:</strong></p>
+  <ul>
+    <li><code>Math.sin(t)</code> – sine wave</li>
+    <li><code>Math.cos(t)</code> – cosine wave</li>
+    <li><code>Math.tan(t)</code> – tangent (use with caution)</li>
+    <li><code>Math.exp(t)</code> – exponential</li>
+    <li><code>Math.pow(t, 2)</code> – power function</li>
+    <li><code>Math.abs(t)</code> – absolute value</li>
+    <li><code>Math.log(t)</code> – natural logarithm</li>
+    <li><code>Math.random()</code> – random noise (no <code>t</code> needed)</li>
+    <li><code>Math.PI</code> – the constant π (≈ 3.14159)</li>
+  </ul>
+  <p><strong>Examples:</strong></p>
+  <ul>
+    <li><code>Math.sin(t)</code></li>
+    <li><code>Math.sin(t) + 0.5 * Math.cos(2*t)</code></li>
+    <li><code>Math.sin(t) * Math.exp(-t/10)</code></li>
+    <li><code>Math.sin(2 * Math.PI * t)</code> – full cycle every second</li>
+    <li><code>Math.sin(t / Math.PI)</code> – slower oscillation</li>
+  </ul>
+  <p>Note: <code>t</code> is in radians and increases over time. Keep output between -1 and 1 to avoid distortion.</p>
+</div>
+
+  <script>
+    function playSound() {
+      const funcStr = document.getElementById('funcInput').value;
+      let userFunc;
+      try {
+        userFunc = new Function('t', `return ${funcStr};`);
+      } catch (e) {
+        alert("Invalid function syntax! Please use valid JavaScript expressions.");
+        return;
+      }
+
+      const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      const sampleRate = audioCtx.sampleRate;
+      const duration = 2; // seconds
+      const buffer = audioCtx.createBuffer(1, sampleRate * duration, sampleRate);
+      const data = buffer.getChannelData(0);
+
+      for (let i = 0; i < data.length; i++) {
+        const t = i / sampleRate * 2 * Math.PI; // time in radians
+        try {
+          let val = userFunc(t);
+          // Clamp to [-1, 1] to avoid distortion
+          data[i] = Math.max(-1, Math.min(1, val));
+        } catch (e) {
+          data[i] = 0;
+        }
+      }
+
+      const source = audioCtx.createBufferSource();
+      source.buffer = buffer;
+      source.connect(audioCtx.destination);
+      source.start();
+    }
+  </script>
+</body>
+</html>
